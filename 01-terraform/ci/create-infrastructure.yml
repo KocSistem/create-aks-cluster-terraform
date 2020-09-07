@@ -1,0 +1,57 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+#trigger:
+#- master
+
+pool:
+  vmImage: 'vs2017-win2016'
+
+variables:
+  location: westeurope
+  TerraformStorageAccount: terraformsample
+  TerraformStorageRG: rg4terraformstorage
+
+steps:
+- task: TerraformInstaller@0
+  inputs:
+    terraformVersion: '0.13.1'
+
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'Visual Studio Enterprise – MPN(b264c09a-1b68-4202-8469-736ce800d110)'
+    scriptType: 'batch'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      call az group create --location $(location) --name $(TerraformStorageRG)
+              
+      call az storage account create --name $(TerraformStorageAccount) --resource-group $(TerraformStorageRG) --location $(location) --sku Standard_LRS
+              
+      call az storage container create --name terraform --account-name $(TerraformStorageAccount)
+    
+- task: TerraformTaskV1@0
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/01-terraform'
+    backendServiceArm: 'Visual Studio Enterprise – MPN(b264c09a-1b68-4202-8469-736ce800d110)'
+    backendAzureRmResourceGroupName: '$(TerraformStorageRG)'
+    backendAzureRmStorageAccountName: '$(TerraformStorageAccount)'
+    backendAzureRmContainerName: 'terraform'
+    backendAzureRmKey: 'prod.terraform.tfstate'
+
+- task: TerraformTaskV1@0
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/01-terraform'
+    environmentServiceNameAzureRM: 'Visual Studio Enterprise – MPN(b264c09a-1b68-4202-8469-736ce800d110)'
+    
+- task: TerraformTaskV1@0
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/01-terraform'
+    environmentServiceNameAzureRM: 'Visual Studio Enterprise – MPN(b264c09a-1b68-4202-8469-736ce800d110)'

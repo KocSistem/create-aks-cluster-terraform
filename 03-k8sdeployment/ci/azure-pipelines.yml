@@ -1,0 +1,23 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: Kubernetes@1
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscriptionEndpoint: 'Visual Studio Enterprise – MPN(b264c09a-1b68-4202-8469-736ce800d110)'
+    azureResourceGroup: 'sample-rg'
+    kubernetesCluster: 'sample-aks'
+    command: 'apply'
+    arguments: '-f webapp-deployment.yaml'
+    secretType: 'dockerRegistry'
+    containerRegistryType: 'Azure Container Registry'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/03-k8sdeployment'

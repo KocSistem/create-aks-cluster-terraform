@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: samplewebapp
+spec:
+  selector:
+    matchLabels:
+      run: samplewebapp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: samplewebapp
+    spec:
+      containers:
+      - name: samplewebapp
+        image: fthkucuk/k8schallenge
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 11130
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: samplewebapp-service
+  namespace: default
+spec:
+  ports:
+    - protocol: TCP
+      port: 11130
+      targetPort: 11130
+      nodePort: 32230
+  selector:
+    run: samplewebapp
+  type: LoadBalancer
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster
+---  
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: samplewebapp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: samplewebapp
+  minReplicas: 1
+  maxReplicas: 30
+  targetCPUUtilizationPercentage: 1
